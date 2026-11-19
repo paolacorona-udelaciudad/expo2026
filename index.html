@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El árbol de la carrera</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Lato:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Pantalla única para proyectar: árbol a la izquierda (raíces, tronco, copa), tarjetas de la etapa elegida a la derecha */
+  --fondo:#FFFFFF; --lila:#F3E4EF; --texto:#3A2140; --tenue:#7A6480;
+  --magenta:#B53D8E; --violeta:#7A2FA8; --ciruela:#3B1A63; --rosa:#E5B7D9;
+  --display:"Baloo 2",system-ui,sans-serif; --cuerpo:"Lato",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--fondo);color:var(--texto);font-family:var(--cuerpo);display:flex;flex-direction:column}
+header{background:var(--magenta);color:#fff;padding:clamp(10px,1.6vh,18px) clamp(16px,3vw,40px);border-bottom-right-radius:28px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{font-family:var(--display);font-weight:700;font-size:clamp(20px,2.4vw,36px);margin:0;line-height:1.1}
+header p{margin:0;font-size:clamp(13px,1.3vw,19px);opacity:.92}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(220px,30%) 1fr;gap:clamp(12px,2vw,32px);padding:clamp(12px,2vw,28px) clamp(16px,3vw,40px)}
+.arbol{min-height:0;display:flex}
+.arbol svg{width:100%;height:100%}
+.zona{cursor:pointer;transition:opacity .25s}
+.zona.apagada{opacity:.4}
+.zona:focus-visible{outline:3px solid var(--violeta);outline-offset:4px}
+.rotulo{font-family:var(--display);font-weight:700;font-size:17px}
+.panel{min-height:0;display:flex;flex-direction:column;gap:clamp(10px,1.6vh,20px)}
+.etapas{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.etapa{flex:1;min-width:150px;text-align:left;font-family:var(--cuerpo);background:var(--lila);color:var(--texto);border:3px solid transparent;border-radius:16px;padding:10px 16px;cursor:pointer}
+.etapa b{display:block;font-family:var(--display);font-size:clamp(18px,1.9vw,30px);line-height:1.1}
+.etapa span{font-size:clamp(12px,1.1vw,17px);color:var(--tenue)}
+.etapa[aria-selected="true"]{background:var(--c);color:#fff}
+.etapa[aria-selected="true"] span{color:#fff;opacity:.9}
+.etapa:focus-visible,.tarjeta:focus-visible,.todas:focus-visible{outline:3px solid var(--ciruela);outline-offset:3px}
+.flecha{align-self:center;font-size:clamp(18px,2vw,30px);color:var(--magenta)}
+.bajada{margin:0;font-size:clamp(14px,1.2vw,21px);line-height:1.3}
+.tarjetas{flex:1;min-height:0;overflow-y:auto;display:grid;gap:clamp(10px,1.2vw,18px);grid-template-columns:repeat(var(--cols),minmax(0,1fr));grid-auto-rows:minmax(min-content,1fr)}
+.tarjeta{background:var(--lila);color:var(--texto);border:0;border-left:10px solid var(--c);border-radius:18px;padding:clamp(8px,1vw,20px) clamp(10px,1.1vw,20px);cursor:pointer;font-family:var(--cuerpo);text-align:left;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.tarjeta[aria-pressed="true"]{background:var(--c);color:#fff}
+.frente,.dorso{display:flex;flex-direction:column;gap:clamp(6px,1vh,12px);min-width:0}
+.tarjeta .dorso{display:none}
+.tarjeta[aria-pressed="true"] .frente{display:none}
+.tarjeta[aria-pressed="true"] .dorso{display:flex}
+.tema,.asig{font-family:var(--display);font-weight:700;font-size:clamp(15px,1.4vw,28px);line-height:1.12;margin:0}
+.cita{font-style:italic;font-size:clamp(12px,1.05vw,19px);line-height:1.3;margin:0}
+.frente .cita{font-size:clamp(15px,1.5vw,28px);line-height:1.25}
+.dorso .asig{font-size:clamp(17px,1.7vw,32px)}
+.etiq{font-size:clamp(11px,.95vw,15px);letter-spacing:.08em;text-transform:uppercase;margin:0}
+.lugar{font-size:clamp(12px,1.05vw,18px);line-height:1.3;margin:0}
+.pie{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+a.todas{text-decoration:none;display:inline-block}
+.todas{font-family:var(--cuerpo);font-weight:700;font-size:clamp(13px,1.2vw,18px);background:#fff;color:var(--magenta);border:2px solid var(--magenta);border-radius:999px;padding:8px 20px;cursor:pointer}
+.fuente{margin:0;font-size:clamp(11px,.95vw,14px);color:var(--tenue)}
+.arbol svg{overflow:visible}
+.vuela{animation:viento 6s linear infinite}
+.raiz{stroke-dasharray:1 2;stroke-dashoffset:0}
+.crece .raiz{animation:crecer 1.8s ease-out both}
+@keyframes crecer{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes viento{0%{transform:translate(0,0) rotate(0);opacity:0}12%{opacity:1}100%{transform:translate(var(--dx,150px),var(--dy,38px)) rotate(160deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.vuela{animation:none}.crece .raiz{animation:none}}
+@media (max-width:760px){
+  html,body{height:auto}
+  main{grid-template-columns:1fr}
+  .arbol{height:300px}
+  .tarjetas{grid-template-columns:1fr 1fr;overflow:visible}
+  .flecha{display:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>El árbol de la carrera</h1>
+  <p>Lic. en Gestión de Instituciones Educativas · Escuela de Política y Gobierno</p>
+</header>
+<main>
+  <div class="arbol">
+    <svg viewBox="0 0 480 560" role="img" aria-label="Árbol con raíces, tronco y copa. Cada parte es una etapa de la carrera.">
+      <line x1="110" y1="336" x2="390" y2="336" stroke="#E5B7D9" stroke-width="3" stroke-linecap="round"/>
+      <g class="zona" id="z-copa" data-z="copa" tabindex="0" role="button" aria-label="Copa: integrar y crear">
+        <rect x="110" y="20" width="360" height="218" fill="transparent"/>
+        <g fill="none" stroke="#B53D8E" stroke-width="5" stroke-linecap="round" id="ramas"></g>
+        <g id="hojas"></g>
+        <g id="volando"></g>
+        <text class="rotulo" x="16" y="70" fill="#7A2FA8">Copa</text>
+        <text x="16" y="90" font-size="14" fill="#7A6480">integrar y crear</text>
+      </g>
+      <g class="zona" id="z-tronco" data-z="tronco" tabindex="0" role="button" aria-label="Tronco: especializarse">
+        <rect x="150" y="238" width="200" height="97" fill="transparent"/>
+        <path d="M230 336 C240 302 243 272 245 240 L255 240 C257 272 260 302 270 336 Z" fill="#B53D8E"/>
+        <text class="rotulo" x="16" y="290" fill="#B53D8E">Tronco</text>
+        <text x="16" y="310" font-size="14" fill="#7A6480">especializarse</text>
+      </g>
+      <g class="zona" id="z-raices" data-z="raices" tabindex="0" role="button" aria-label="Raíces: fundamentar">
+        <rect x="110" y="338" width="280" height="200" fill="transparent"/>
+        <g fill="none" stroke="#3B1A63" stroke-linecap="round" id="raicillas">
+          <path class="raiz" pathLength="1" d="M247 338 C228 362 182 382 134 440" stroke-width="4"/>
+          <path class="raiz" pathLength="1" d="M253 338 C272 362 318 382 366 440" stroke-width="4"/>
+          <path class="raiz" pathLength="1" d="M249 338 C240 384 216 432 196 500" stroke-width="3.5"/>
+          <path class="raiz" pathLength="1" d="M251 338 C260 384 284 432 304 500" stroke-width="3.5"/>
+          <path class="raiz" pathLength="1" d="M250 338 C250 400 250 452 250 522" stroke-width="3.5"/>
+          <path class="raiz" pathLength="1" d="M182 390 C168 418 162 444 160 470" stroke-width="2"/>
+          <path class="raiz" pathLength="1" d="M318 390 C332 418 338 444 340 470" stroke-width="2"/>
+          <path class="raiz" pathLength="1" d="M224 430 C218 456 222 480 226 500" stroke-width="2"/>
+          <path class="raiz" pathLength="1" d="M276 430 C282 456 278 480 274 500" stroke-width="2"/>
+          <path class="raiz" pathLength="1" d="M156 414 C140 424 128 440 120 462" stroke-width="1.6"/>
+          <path class="raiz" pathLength="1" d="M344 414 C360 424 372 440 380 462" stroke-width="1.6"/>
+          <path class="raiz" pathLength="1" d="M208 462 C196 478 186 494 182 516" stroke-width="1.6"/>
+          <path class="raiz" pathLength="1" d="M292 462 C304 478 314 494 318 516" stroke-width="1.6"/>
+          <path class="raiz" pathLength="1" d="M250 440 C242 462 238 484 240 506" stroke-width="1.6"/>
+          <path class="raiz" pathLength="1" d="M250 470 C258 488 262 506 260 528" stroke-width="1.6"/>
+          <path class="raiz" pathLength="1" d="M200 372 C186 386 176 402 172 420" stroke-width="1.6"/>
+          <path class="raiz" pathLength="1" d="M300 372 C314 386 324 402 328 420" stroke-width="1.6"/>
+        </g>
+        <text class="rotulo" x="16" y="400" fill="#3B1A63">Raíces</text>
+        <text x="16" y="420" font-size="14" fill="#7A6480">fundamentar</text>
+      </g>
+    </svg>
+  </div>
+  <section class="panel">
+    <div class="etapas" role="tablist" aria-label="Etapas de la carrera">
+      <button type="button" class="etapa" role="tab" id="t-raices" data-z="raices" style="--c:var(--ciruela)"><b>Fundamentar</b><span>Raíces · Formación General</span></button>
+      <span class="flecha" aria-hidden="true">→</span>
+      <button type="button" class="etapa" role="tab" id="t-tronco" data-z="tronco" style="--c:var(--magenta)"><b>Especializarse</b><span>Tronco · Formación Específica</span></button>
+      <span class="flecha" aria-hidden="true">→</span>
+      <button type="button" class="etapa" role="tab" id="t-copa" data-z="copa" style="--c:var(--violeta)"><b>Integrar y crear</b><span>Copa · Formación Profesional</span></button>
+    </div>
+    <div class="tarjetas" id="tarjetas"></div>
+    <div class="pie">
+      <a class="todas" href="https://claude.ai/artifact/KGH44Xvm19iP3BWAxAPJHH">← Volver a Armemos el árbol</a>
+      <button type="button" class="todas" id="todas">Dar vuelta todas</button>
+    </div>
+  </section>
+</main>
+<script>
+const ETAPAS={
+ raices:{c:"var(--ciruela)",lugar:"Raíces · Formación General",cols:2,
+  cartas:[
+   {t:"Instituciones y culturas institucionales",q:"Las culturas institucionales",a:"Instituciones Educativas"},
+   {t:"Política educativa",q:"Los equipos directivos como actores de la política educativa",a:"Política educativa y gestión institucional"},
+   {t:"Problemáticas educativas contemporáneas",q:"las tensiones entre inclusión-exclusión, calidad y equidad",a:"Seminario: Problemáticas educativas contemporáneas"},
+   {t:"Aprendizaje",q:"El aprendizaje como proceso complejo",a:"Perspectivas actuales acerca del Aprendizaje"}
+  ]},
+ tronco:{c:"var(--magenta)",lugar:"Tronco · Formación Específica",cols:3,
+  cartas:[
+   {t:"Liderazgo y desarrollo profesional",q:"El equipo docente como comunidad de aprendizaje",a:"Liderazgo y desarrollo profesional docente"},
+   {t:"Planeamiento institucional",q:"El diagnóstico y la autoevaluación institucional",a:"Planeamiento estratégico institucional"},
+   {t:"Gestión curricular y pedagógica",q:"Las actividades de coordinación y de asesoramiento pedagógico",a:"Gestión curricular y pedagógica"},
+   {t:"Datos, administración y tecnología",b:"Gestión administrativa con tecnologías digitales",q:"Herramientas digitales y sistemas de información en línea para la gestión administrativa"},
+   {t:"Bienestar socioemocional",q:"Bienestar socioemocional como dimensión de la gestión institucional",a:"Gestión y bienestar socioemocional"}
+  ]},
+ copa:{c:"var(--violeta)",lugar:"Copa · Formación Profesional",cols:3,
+  cartas:[
+   {t:"Integración de saberes",q:"un ejercicio de integración de saberes orientado al abordaje de problemas de gestión",a:"Taller de diseño del TFI"},
+   {t:"Abordaje de problemas reales",q:"una oportunidad para abordar problemas reales de la gestión educativa",a:"Taller de diseño del TFI"},
+   {t:"Propuestas de mejora",q:"diseñar propuestas de mejora para instituciones, sistemas o políticas educativas",a:"Taller de diseño del TFI"}
+  ]}
+};
+const $=id=>document.getElementById(id);
+let actual="raices";
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function mostrar(z){
+  actual=z;const E=ETAPAS[z];
+  document.querySelectorAll(".zona").forEach(g=>g.classList.toggle("apagada",g.dataset.z!==z));
+  document.querySelectorAll(".etapa").forEach(b=>b.setAttribute("aria-selected",b.dataset.z===z?"true":"false"));
+  const rc=$("raicillas");rc.classList.remove("crece");if(z==="raices"){void rc.getBoundingClientRect();rc.classList.add("crece")}
+  const cont=$("tarjetas");cont.innerHTML="";
+  cont.style.setProperty("--cols",E.cols);
+  E.cartas.forEach((c,n)=>{
+    const b=el("button","tarjeta");b.type="button";b.id="carta-"+z+"-"+n;b.style.setProperty("--c",E.c);
+    b.setAttribute("aria-pressed","false");
+    const f=el("div","frente"),d=el("div","dorso");
+    f.append(el("p","cita","“"+c.q+"”"));
+    d.append(el("p","asig",c.b||c.t),el("p","lugar",E.lugar));
+    b.append(f,d);
+    b.addEventListener("click",()=>{b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")==="true"?"false":"true");sincronizar()});
+    cont.append(b);
+  });
+  sincronizar();
+}
+function sincronizar(){
+  const cs=[...document.querySelectorAll(".tarjeta")];
+  const todas=cs.every(c=>c.getAttribute("aria-pressed")==="true");
+  $("todas").textContent=todas?"Volver a tapar":"Dar vuelta todas";
+}
+$("todas").addEventListener("click",()=>{
+  const cs=[...document.querySelectorAll(".tarjeta")];
+  const todas=cs.every(c=>c.getAttribute("aria-pressed")==="true");
+  cs.forEach(c=>c.setAttribute("aria-pressed",todas?"false":"true"));sincronizar();
+});
+document.querySelectorAll(".etapa").forEach(b=>b.addEventListener("click",()=>mostrar(b.dataset.z)));
+document.querySelectorAll(".zona").forEach(g=>{
+  g.addEventListener("click",()=>mostrar(g.dataset.z));
+  g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();mostrar(g.dataset.z)}});
+});
+/* Hojas: copa inclinada hacia la derecha, como llevada por el viento */
+(function(){
+  const NS="http://www.w3.org/2000/svg",COL=["#B53D8E","#7A2FA8","#C870AB","#E5B7D9","#9A4FC4"];
+  let s=7;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const hoja=(x,y,rot,esc,col,cls)=>{
+    const g=document.createElementNS(NS,"g");g.setAttribute("transform","translate("+x+" "+y+")");
+    const p=document.createElementNS(NS,"path");
+    p.setAttribute("d","M0 0 C6 -10 18 -10 26 0 C18 10 6 10 0 0Z");
+    p.setAttribute("fill",col);p.setAttribute("transform","rotate("+rot+") scale("+esc+")");
+    if(cls){const w=document.createElementNS(NS,"g");w.setAttribute("class",cls);w.style.animationDelay=(r()*7).toFixed(1)+"s";w.append(p);g.append(w)}else g.append(p);
+    return g;
+  };
+  const H=$("hojas"),R=$("ramas"),CX=250,CY=168;
+  const pt=(ang,rad)=>[CX+Math.cos(ang*Math.PI/180)*rad,CY+Math.sin(ang*Math.PI/180)*rad];
+  [-150,-120,-90,-60,-30].forEach(a=>{const q=pt(a,68),l=document.createElementNS(NS,"path");
+    l.setAttribute("d","M250 244 Q250 "+(CY+40)+" "+q[0].toFixed(1)+" "+q[1].toFixed(1));R.append(l)});
+  for(let i=0;i<11;i++){const a=-205+i*23,q=pt(a,70);H.append(hoja(q[0],q[1],a,2.7,COL[i%3]))}
+  for(let i=0;i<6;i++){const a=-170+i*32,q=pt(a,14);H.append(hoja(q[0],q[1],a,2.1,COL[(i+1)%3]))}
+  const V=$("volando");
+  [-165,-135,-105,-75,-45,-15,15,-120,-60,-30].forEach((a,i)=>{
+    const q=pt(a,118),h=hoja(q[0],q[1],a,0.9+r()*0.4,COL[i%3],"vuela"),w=h.firstChild;
+    w.style.setProperty("--dx",(Math.cos(a*Math.PI/180)*95+25).toFixed(0)+"px");
+    w.style.setProperty("--dy",(Math.sin(a*Math.PI/180)*80+22).toFixed(0)+"px");
+    V.append(h)});
+})();
+mostrar("raices");
+</script>
+</body>
+</html>
